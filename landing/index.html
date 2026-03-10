@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vector Drop — Free Image to SVG Converter</title>
+  <meta name="description" content="Drop any image, get a clean SVG. No subscriptions. No watermarks. Free forever.">
+
+  <!-- Fonts -->
+  <style>
+    /* Cash Sans (body) */
+    @font-face { font-family: CashSans; src: url("https://raw.githubusercontent.com/kasiaabedkowski/CashSans/main/CashSans-Light.otf") format("opentype"); font-weight: 300; font-style: normal; font-display: swap; }
+    @font-face { font-family: CashSans; src: url("https://raw.githubusercontent.com/kasiaabedkowski/CashSans/main/CashSans-Regular.otf") format("opentype"); font-weight: 400; font-style: normal; font-display: swap; }
+    @font-face { font-family: CashSans; src: url("https://raw.githubusercontent.com/kasiaabedkowski/CashSans/main/CashSans-Medium.otf") format("opentype"); font-weight: 500; font-style: normal; font-display: swap; }
+    @font-face { font-family: CashSans; src: url("https://raw.githubusercontent.com/kasiaabedkowski/CashSans/main/CashSans-Semibold.otf") format("opentype"); font-weight: 600; font-style: normal; font-display: swap; }
+    @font-face { font-family: CashSans; src: url("https://raw.githubusercontent.com/kasiaabedkowski/CashSans/main/CashSans-Bold.otf") format("opentype"); font-weight: 700; font-style: normal; font-display: swap; }
+    @font-face { font-family: CashSans; src: url("https://raw.githubusercontent.com/kasiaabedkowski/CashSans/main/CashSans-Black.otf") format("opentype"); font-weight: 900; font-style: normal; font-display: swap; }
+
+    /* Cash Sans Wide (display) */
+    @font-face { font-family: 'Cash Sans Wide'; src: url("https://cash-f.squarecdn.com/static/fonts/cashsans/woff2/CashSansWide-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Cash Sans Wide'; src: url("https://cash-f.squarecdn.com/static/fonts/cashsans/woff2/CashSansWide-Bold.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+
+    /* Cash Sans Mono */
+    @font-face { font-family: 'Cash Sans Mono'; src: url("https://cash-f.squarecdn.com/static/fonts/cashsans/woff2/CashSansMono-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Cash Sans Mono'; src: url("https://cash-f.squarecdn.com/static/fonts/cashsans/woff2/CashSansMono-Medium.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+  </style>
+
+  <!-- GSAP -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>
+
+  <!-- Lenis Smooth Scroll -->
+  <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js" defer></script>
+
+  <style>
+    :root {
+      --bg: #080808;
+      --bg-raised: #111110;
+      --fg: #f0ece4;
+      --fg-muted: rgba(240, 236, 228, 0.45);
+      --fg-dim: rgba(240, 236, 228, 0.2);
+      --accent: #00d4ff;
+      --accent-glow: rgba(0, 212, 255, 0.15);
+      --green: #34d399;
+      --display: 'Cash Sans Wide', CashSans, sans-serif;
+      --body: CashSans, sans-serif;
+      --mono: 'Cash Sans Mono', CashSans, monospace;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    ::selection {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    html {
+      scroll-behavior: auto;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--body);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── GRAIN OVERLAY ── */
+    .grain {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      pointer-events: none;
+      opacity: 0.035;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 180px;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 24px 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      background: rgba(8, 8, 8, 0.7);
+      border-bottom: 1px solid rgba(240, 236, 228, 0.04);
+    }
+
+    .nav-logo {
+      font-family: var(--display);
+      font-weight: 600;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+      color: var(--fg);
+      text-decoration: none;
+    }
+
+    .nav-logo span {
+      color: var(--accent);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 36px;
+      align-items: center;
+    }
+
+    .nav-links a {
+      color: var(--fg-muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      transition: color 0.25s ease;
+    }
+
+    .nav-links a:hover {
+      color: var(--fg);
+    }
+
+    .nav-cta {
+      background: var(--fg) !important;
+      color: var(--bg) !important;
+      padding: 10px 24px;
+      border-radius: 999px;
+      font-weight: 600 !important;
+      font-size: 13px !important;
+      letter-spacing: 0.04em !important;
+      transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    }
+
+    .nav-cta:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 24px rgba(240, 236, 228, 0.12);
+    }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 160px 48px 120px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-bg-glow {
+      position: absolute;
+      width: 800px;
+      height: 800px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      filter: blur(80px);
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px 6px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(240, 236, 228, 0.08);
+      background: rgba(240, 236, 228, 0.03);
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--fg-muted);
+      margin-bottom: 48px;
+      letter-spacing: 0.02em;
+      font-weight: 400;
+    }
+
+    .hero-badge .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse-dot 2s ease infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4); }
+      50% { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
+    }
+
+    .hero h1 {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: clamp(3.5rem, 9vw, 9rem);
+      line-height: 0.92;
+      letter-spacing: -0.04em;
+      margin-bottom: 32px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero h1 .line {
+      display: block;
+      overflow: hidden;
+      padding-bottom: 0.15em;
+      padding-right: 0.05em;
+      margin-bottom: -0.15em;
+    }
+
+    .hero h1 .line-inner {
+      display: block;
+      transform: translateY(110%);
+    }
+
+    .hero h1 .accent {
+      color: var(--accent);
+    }
+
+    .hero-sub {
+      font-size: clamp(1rem, 2vw, 1.25rem);
+      color: var(--fg-muted);
+      max-width: 520px;
+      line-height: 1.7;
+      margin-bottom: 48px;
+      position: relative;
+      z-index: 1;
+      font-weight: 400;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--accent);
+      color: #000;
+      padding: 16px 36px;
+      border-radius: 999px;
+      font-family: var(--display);
+      font-weight: 600;
+      font-size: 15px;
+      letter-spacing: 0.02em;
+      text-decoration: none;
+      transition: transform 0.2s ease, box-shadow 0.3s ease;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 40px rgba(0, 212, 255, 0.25);
+    }
+
+    .btn-primary svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: transparent;
+      color: var(--fg-muted);
+      padding: 16px 32px;
+      border-radius: 999px;
+      font-family: var(--display);
+      font-weight: 500;
+      font-size: 15px;
+      letter-spacing: 0.02em;
+      text-decoration: none;
+      border: 1px solid rgba(240, 236, 228, 0.1);
+      transition: all 0.25s ease;
+      cursor: pointer;
+    }
+
+    .btn-secondary:hover {
+      border-color: rgba(240, 236, 228, 0.25);
+      color: var(--fg);
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 48px;
+      margin-top: 80px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-stat {
+      text-align: center;
+    }
+
+    .hero-stat-value {
+      font-family: var(--display);
+      font-weight: 600;
+      font-size: 28px;
+      letter-spacing: -0.02em;
+      color: var(--fg);
+    }
+
+    .hero-stat-label {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--fg-dim);
+      margin-top: 4px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-weight: 400;
+    }
+
+    /* ── MARQUEE ── */
+    .marquee-section {
+      padding: 32px 0;
+      border-top: 1px solid rgba(240, 236, 228, 0.04);
+      border-bottom: 1px solid rgba(240, 236, 228, 0.04);
+      overflow: hidden;
+    }
+
+    .marquee-track {
+      display: flex;
+      gap: 64px;
+      white-space: nowrap;
+      will-change: transform;
+    }
+
+    .marquee-item {
+      font-family: var(--mono);
+      font-weight: 400;
+      font-size: 18px;
+      color: var(--fg-dim);
+      letter-spacing: 0.04em;
+      display: flex;
+      align-items: center;
+      gap: 64px;
+      flex-shrink: 0;
+    }
+
+    .marquee-item .sep {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--fg-dim);
+      flex-shrink: 0;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .how-section {
+      padding: 160px 48px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-family: var(--mono);
+      font-weight: 500;
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 24px;
+    }
+
+    .section-title {
+      font-family: var(--display);
+      font-weight: 600;
+      font-size: clamp(2.2rem, 5vw, 4rem);
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      margin-bottom: 80px;
+      max-width: 640px;
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .step-card {
+      background: var(--bg-raised);
+      border: 1px solid rgba(240, 236, 228, 0.05);
+      border-radius: 24px;
+      padding: 40px 32px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s ease;
+    }
+
+    .step-card:hover {
+      border-color: rgba(240, 236, 228, 0.1);
+    }
+
+    .step-number {
+      font-family: var(--mono);
+      font-weight: 500;
+      font-size: 72px;
+      color: rgba(240, 236, 228, 0.04);
+      line-height: 1;
+      letter-spacing: -0.04em;
+      margin-bottom: 24px;
+    }
+
+    .step-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: rgba(0, 212, 255, 0.08);
+      border: 1px solid rgba(0, 212, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      color: var(--accent);
+    }
+
+    .step-card h3 {
+      font-family: var(--display);
+      font-weight: 600;
+      font-size: 22px;
+      letter-spacing: -0.01em;
+      margin-bottom: 12px;
+    }
+
+    .step-card p {
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--fg-muted);
+    }
+
+    /* ── COMPARISON / VALUE PROP ── */
+    .value-section {
+      padding: 160px 48px;
+      position: relative;
+    }
+
+    .value-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .value-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      margin-top: 80px;
+    }
+
+    .cost-card {
+      border-radius: 24px;
+      padding: 48px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cost-card.them {
+      background: rgba(240, 236, 228, 0.02);
+      border: 1px solid rgba(240, 236, 228, 0.06);
+    }
+
+    .cost-card.us {
+      background: rgba(0, 212, 255, 0.04);
+      border: 1px solid rgba(0, 212, 255, 0.15);
+    }
+
+    .cost-card-label {
+      font-family: var(--mono);
+      font-weight: 500;
+      font-size: 13px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--fg-dim);
+      margin-bottom: 20px;
+    }
+
+    .cost-card.us .cost-card-label {
+      color: var(--accent);
+    }
+
+    .cost-card .price {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: clamp(3rem, 6vw, 5rem);
+      letter-spacing: -0.04em;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .cost-card .price-sub {
+      font-size: 15px;
+      color: var(--fg-muted);
+      margin-bottom: 36px;
+    }
+
+    .cost-card.them .price {
+      text-decoration: line-through;
+      text-decoration-color: rgba(240, 236, 228, 0.2);
+      color: var(--fg-dim);
+    }
+
+    .cost-card.us .price {
+      color: var(--accent);
+    }
+
+    .cost-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .cost-list li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 15px;
+      color: var(--fg-muted);
+      line-height: 1.5;
+    }
+
+    .cost-list .icon-x {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+
+    .cost-list .icon-check {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(52, 211, 153, 0.1);
+      color: var(--green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+
+    /* ── QUOTES ── */
+    .quotes-section {
+      padding: 120px 48px 160px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .quotes-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .quotes-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 80px;
+    }
+
+    .quote-card {
+      background: var(--bg-raised);
+      border: 1px solid rgba(240, 236, 228, 0.05);
+      border-radius: 20px;
+      padding: 36px;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.3s ease, transform 0.3s ease;
+    }
+
+    .quote-card:hover {
+      border-color: rgba(240, 236, 228, 0.1);
+      transform: translateY(-4px);
+    }
+
+    .quote-card:first-child {
+      grid-row: span 2;
+    }
+
+    .quote-stars {
+      display: flex;
+      gap: 2px;
+      margin-bottom: 20px;
+      color: var(--accent);
+      font-size: 14px;
+    }
+
+    .quote-text {
+      font-size: 16px;
+      line-height: 1.7;
+      color: var(--fg);
+      flex: 1;
+      margin-bottom: 28px;
+      font-weight: 400;
+    }
+
+    .quote-text .highlight {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .quote-author {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(240, 236, 228, 0.06);
+    }
+
+    .quote-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(240, 236, 228, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--display);
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--fg-muted);
+    }
+
+    .quote-author-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .quote-author-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--fg);
+    }
+
+    .quote-author-role {
+      font-size: 12px;
+      color: var(--fg-dim);
+      margin-top: 2px;
+    }
+
+    /* ── FEATURES ── */
+    .features-section {
+      padding: 160px 48px;
+      border-top: 1px solid rgba(240, 236, 228, 0.04);
+    }
+
+    .features-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      margin-top: 80px;
+    }
+
+    .feature-card {
+      background: var(--bg-raised);
+      border: 1px solid rgba(240, 236, 228, 0.05);
+      border-radius: 24px;
+      padding: 44px 40px;
+      transition: border-color 0.3s ease;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(240, 236, 228, 0.1);
+    }
+
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(0, 212, 255, 0.08);
+      border: 1px solid rgba(0, 212, 255, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      color: var(--accent);
+    }
+
+    .feature-card h3 {
+      font-family: var(--display);
+      font-weight: 600;
+      font-size: 20px;
+      letter-spacing: -0.01em;
+      margin-bottom: 10px;
+    }
+
+    .feature-card p {
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--fg-muted);
+    }
+
+    /* ── CTA ── */
+    .cta-section {
+      padding: 160px 48px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-glow {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0, 212, 255, 0.08) 0%, transparent 70%);
+      bottom: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
+      filter: blur(60px);
+    }
+
+    .cta-section h2 {
+      font-family: var(--display);
+      font-weight: 600;
+      font-size: clamp(2.5rem, 6vw, 5rem);
+      letter-spacing: -0.04em;
+      line-height: 1;
+      margin-bottom: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta-section p {
+      font-size: 18px;
+      color: var(--fg-muted);
+      margin-bottom: 48px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta-section .btn-primary {
+      font-size: 17px;
+      padding: 20px 44px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta-note {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--fg-dim);
+      margin-top: 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 40px 48px;
+      border-top: 1px solid rgba(240, 236, 228, 0.04);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-left {
+      font-size: 13px;
+      color: var(--fg-dim);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+    }
+
+    .footer-links a {
+      font-size: 13px;
+      color: var(--fg-dim);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .footer-links a:hover {
+      color: var(--fg);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      nav { padding: 20px 24px; }
+      .nav-links { gap: 20px; }
+      .hero { padding: 140px 24px 100px; }
+      .steps-grid { grid-template-columns: 1fr; }
+      .value-grid { grid-template-columns: 1fr; }
+      .quotes-grid { grid-template-columns: 1fr; }
+      .quote-card:first-child { grid-row: span 1; }
+      .features-grid { grid-template-columns: 1fr; }
+      .how-section, .value-section, .quotes-section,
+      .features-section, .cta-section { padding: 100px 24px; }
+      .hero-stats { gap: 32px; }
+      footer { flex-direction: column; gap: 16px; text-align: center; }
+    }
+
+    @media (max-width: 600px) {
+      .hero-actions { flex-direction: column; align-items: center; }
+      .nav-links a:not(.nav-cta) { display: none; }
+    }
+
+    /* ── ANIMATIONS INITIAL STATE ── */
+    .reveal-up {
+      opacity: 0;
+      transform: translateY(60px);
+    }
+
+    .reveal-fade {
+      opacity: 0;
+    }
+
+    /* ── CUSTOM CURSOR ── */
+    .cursor-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 10000;
+      mix-blend-mode: difference;
+      transform: translate(-50%, -50%);
+      transition: width 0.2s ease, height 0.2s ease;
+    }
+
+    .cursor-dot.hovering {
+      width: 40px;
+      height: 40px;
+      background: rgba(0, 212, 255, 0.15);
+      border: 1px solid var(--accent);
+    }
+
+    @media (pointer: coarse) {
+      .cursor-dot { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="grain"></div>
+  <div class="cursor-dot" id="cursor"></div>
+
+  <!-- NAV -->
+  <nav>
+    <a href="#" class="nav-logo">vector<span>drop</span></a>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#features">Features</a>
+      <a href="#download" class="nav-cta">Download</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero" id="hero">
+    <div class="hero-bg-glow"></div>
+
+    <div class="hero-badge reveal-fade">
+      <span class="dot"></span>
+      Free &amp; open source — no catch
+    </div>
+
+    <h1>
+      <span class="line"><span class="line-inner">Drop an image.</span></span>
+      <span class="line"><span class="line-inner">Get a <span class="accent">vector.</span></span></span>
+    </h1>
+
+    <p class="hero-sub reveal-up">
+      Drag any raster image onto Vector Drop and get a clean, optimized SVG in under a second. No subscriptions. No watermarks. No nonsense.
+    </p>
+
+    <div class="hero-actions reveal-up">
+      <a href="#download" class="btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download for Mac
+      </a>
+      <a href="https://github.com" class="btn-secondary">View on GitHub</a>
+    </div>
+
+    <div class="hero-stats reveal-up">
+      <div class="hero-stat">
+        <div class="hero-stat-value" data-count="0">$0</div>
+        <div class="hero-stat-label">Forever</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">&lt;1s</div>
+        <div class="hero-stat-label">Trace time</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">100%</div>
+        <div class="hero-stat-label">Offline</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MARQUEE -->
+  <div class="marquee-section">
+    <div class="marquee-track" id="marquee">
+      <span class="marquee-item">PNG to SVG <span class="sep"></span></span>
+      <span class="marquee-item">JPG to SVG <span class="sep"></span></span>
+      <span class="marquee-item">WebP to SVG <span class="sep"></span></span>
+      <span class="marquee-item">AVIF to SVG <span class="sep"></span></span>
+      <span class="marquee-item">Drag &amp; Drop <span class="sep"></span></span>
+      <span class="marquee-item">One Click Copy <span class="sep"></span></span>
+      <span class="marquee-item">Paste into Figma <span class="sep"></span></span>
+      <span class="marquee-item">Completely Free <span class="sep"></span></span>
+      <span class="marquee-item">PNG to SVG <span class="sep"></span></span>
+      <span class="marquee-item">JPG to SVG <span class="sep"></span></span>
+      <span class="marquee-item">WebP to SVG <span class="sep"></span></span>
+      <span class="marquee-item">AVIF to SVG <span class="sep"></span></span>
+      <span class="marquee-item">Drag &amp; Drop <span class="sep"></span></span>
+      <span class="marquee-item">One Click Copy <span class="sep"></span></span>
+      <span class="marquee-item">Paste into Figma <span class="sep"></span></span>
+      <span class="marquee-item">Completely Free <span class="sep"></span></span>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <section class="how-section" id="how">
+    <div class="section-label reveal-up">How it works</div>
+    <h2 class="section-title reveal-up">Three seconds.<br>Three steps.</h2>
+
+    <div class="steps-grid">
+      <div class="step-card reveal-up">
+        <div class="step-number">01</div>
+        <div class="step-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </div>
+        <h3>Drop</h3>
+        <p>Drag any PNG, JPG, WebP, or AVIF image onto the app window. That's it — no file pickers, no menus.</p>
+      </div>
+
+      <div class="step-card reveal-up">
+        <div class="step-number">02</div>
+        <div class="step-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <h3>Trace</h3>
+        <p>Vector Drop upscales your image 3x and runs an optimized potrace pipeline for crisp, detailed SVG paths.</p>
+      </div>
+
+      <div class="step-card reveal-up">
+        <div class="step-number">03</div>
+        <div class="step-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </div>
+        <h3>Copy</h3>
+        <p>One click copies clean SVG to your clipboard. Paste directly into Figma, Paper, Sketch, or any design tool.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- VALUE / PRICING COMPARISON -->
+  <section class="value-section" id="pricing">
+    <div class="value-inner">
+      <div class="section-label reveal-up">Stop overpaying</div>
+      <h2 class="section-title reveal-up">You shouldn't need<br>a subscription to<br>trace an image.</h2>
+
+      <div class="value-grid">
+        <div class="cost-card them reveal-up">
+          <div class="cost-card-label">The alternatives</div>
+          <div class="price">$55/mo</div>
+          <div class="price-sub">Adobe Illustrator — or $300+ for one-time vector tools</div>
+          <ul class="cost-list">
+            <li><span class="icon-x">&times;</span>Monthly subscription required</li>
+            <li><span class="icon-x">&times;</span>Bloated apps you don't need</li>
+            <li><span class="icon-x">&times;</span>Online tools watermark free results</li>
+            <li><span class="icon-x">&times;</span>Per-image credits on "free" tiers</li>
+            <li><span class="icon-x">&times;</span>Privacy concerns — images uploaded to servers</li>
+          </ul>
+        </div>
+
+        <div class="cost-card us reveal-up">
+          <div class="cost-card-label">Vector Drop</div>
+          <div class="price">$0</div>
+          <div class="price-sub">Free forever. No trial. No tier limits.</div>
+          <ul class="cost-list">
+            <li><span class="icon-check">&#10003;</span>100% free, no strings attached</li>
+            <li><span class="icon-check">&#10003;</span>Runs locally — your images never leave your machine</li>
+            <li><span class="icon-check">&#10003;</span>No account or sign-up needed</li>
+            <li><span class="icon-check">&#10003;</span>Unlimited conversions, always</li>
+            <li><span class="icon-check">&#10003;</span>Lightweight — under 5MB total</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUOTES -->
+  <section class="quotes-section" id="quotes">
+    <div class="quotes-inner">
+      <div class="section-label reveal-up">What people are saying</div>
+      <h2 class="section-title reveal-up">Built for designers<br>tired of paying for<br>basic tools.</h2>
+
+      <div class="quotes-grid">
+        <div class="quote-card reveal-up">
+          <div class="quote-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="quote-text">"I was paying <span class="highlight">$55/month for Illustrator</span> literally just to use Image Trace on client logos. That's $660 a year for one feature. Vector Drop does the same thing for free and the output is honestly cleaner."</p>
+          <div class="quote-author">
+            <div class="quote-avatar">MR</div>
+            <div class="quote-author-info">
+              <span class="quote-author-name">Maria Rossi</span>
+              <span class="quote-author-role">Freelance Brand Designer</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="quote-card reveal-up">
+          <div class="quote-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="quote-text">"Vector Magic wanted <span class="highlight">$300 for a desktop license</span>. I found Vector Drop on a whim and haven't looked back. Drag, drop, paste into Figma. Done."</p>
+          <div class="quote-author">
+            <div class="quote-avatar">JK</div>
+            <div class="quote-author-info">
+              <span class="quote-author-name">James Kim</span>
+              <span class="quote-author-role">UI/UX Designer</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="quote-card reveal-up">
+          <div class="quote-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="quote-text">"Every online converter I tried either <span class="highlight">watermarked the SVG</span> or limited me to 3 free conversions. Vector Drop is genuinely free. Wild that this exists."</p>
+          <div class="quote-author">
+            <div class="quote-avatar">AL</div>
+            <div class="quote-author-info">
+              <span class="quote-author-name">Ana Lopes</span>
+              <span class="quote-author-role">Product Designer at a Startup</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="quote-card reveal-up">
+          <div class="quote-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="quote-text">"The fact that it works <span class="highlight">completely offline</span> is huge. No uploading sensitive client assets to random servers. Just works."</p>
+          <div class="quote-author">
+            <div class="quote-avatar">DH</div>
+            <div class="quote-author-info">
+              <span class="quote-author-name">David Hernandez</span>
+              <span class="quote-author-role">Design Lead, Agency</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features-section" id="features">
+    <div class="features-inner">
+      <div class="section-label reveal-up">Under the hood</div>
+      <h2 class="section-title reveal-up">Small app.<br>Serious output.</h2>
+
+      <div class="features-grid">
+        <div class="feature-card reveal-up">
+          <div class="feature-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <h3>3x Upscale Pipeline</h3>
+          <p>Images are upscaled with Lanczos3 filtering before tracing, preserving fine details and sharp text that other tools lose.</p>
+        </div>
+
+        <div class="feature-card reveal-up">
+          <div class="feature-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
+          <h3>Native Desktop App</h3>
+          <p>Built with Tauri and Rust. Starts instantly, uses minimal memory, and runs entirely on your machine — no Electron bloat.</p>
+        </div>
+
+        <div class="feature-card reveal-up">
+          <div class="feature-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+          </div>
+          <h3>Optimized Tracing</h3>
+          <p>Hand-tuned potrace parameters balance smooth curves with sharp corners — optimized for logos, icons, and text.</p>
+        </div>
+
+        <div class="feature-card reveal-up">
+          <div class="feature-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+          <h3>Instant Clipboard</h3>
+          <p>One click or Cmd+C copies clean SVG markup. Paste directly into Figma, Paper, Sketch, or your code editor.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section" id="download">
+    <div class="cta-glow"></div>
+    <h2 class="reveal-up">Stop paying for<br><span class="accent">image tracing.</span></h2>
+    <p class="reveal-up">Download Vector Drop. It's free, fast, and works offline.</p>
+    <a href="#" class="btn-primary reveal-up">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download for Mac
+    </a>
+    <div class="cta-note reveal-up">macOS 12+ &middot; Apple Silicon &middot; Under 5MB</div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-left">&copy; 2026 Vector Drop. Free forever.</div>
+    <div class="footer-links">
+      <a href="#">GitHub</a>
+      <a href="#">Releases</a>
+      <a href="#">License</a>
+    </div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // ── LENIS SMOOTH SCROLL ──
+      const lenis = new Lenis({
+        duration: 1.2,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        smooth: true,
+      });
+
+      function raf(time) {
+        lenis.raf(time);
+        requestAnimationFrame(raf);
+      }
+      requestAnimationFrame(raf);
+
+      // Sync GSAP ScrollTrigger with Lenis
+      lenis.on('scroll', ScrollTrigger.update);
+      gsap.ticker.add((time) => lenis.raf(time * 1000));
+      gsap.ticker.lagSmoothing(0);
+
+      // ── REGISTER PLUGINS ──
+      gsap.registerPlugin(ScrollTrigger);
+
+      // ── CUSTOM CURSOR ──
+      const cursor = document.getElementById('cursor');
+      let cursorX = 0, cursorY = 0;
+
+      document.addEventListener('mousemove', (e) => {
+        cursorX = e.clientX;
+        cursorY = e.clientY;
+      });
+
+      gsap.ticker.add(() => {
+        gsap.set(cursor, { x: cursorX, y: cursorY });
+      });
+
+      // Cursor hover effect on interactive elements
+      const hoverTargets = document.querySelectorAll('a, button, .step-card, .quote-card, .feature-card');
+      hoverTargets.forEach(el => {
+        el.addEventListener('mouseenter', () => cursor.classList.add('hovering'));
+        el.addEventListener('mouseleave', () => cursor.classList.remove('hovering'));
+      });
+
+      // ── HERO ANIMATIONS ──
+      const heroTl = gsap.timeline({ defaults: { ease: 'power4.out' } });
+
+      heroTl
+        .to('.hero .line-inner', {
+          y: 0,
+          duration: 1.4,
+          stagger: 0.12,
+        })
+        .to('.hero-badge', {
+          opacity: 1,
+          duration: 0.8,
+        }, '-=0.9')
+        .to('.hero-sub', {
+          opacity: 1,
+          y: 0,
+          duration: 1,
+        }, '-=0.7')
+        .to('.hero-actions', {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+        }, '-=0.6')
+        .to('.hero-stats', {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+        }, '-=0.5');
+
+      // ── MARQUEE ──
+      const marquee = document.getElementById('marquee');
+      gsap.to(marquee, {
+        x: () => -(marquee.scrollWidth / 2),
+        duration: 30,
+        ease: 'none',
+        repeat: -1,
+      });
+
+      // ── SCROLL REVEAL ANIMATIONS ──
+      const revealEls = document.querySelectorAll('.reveal-up:not(.hero-sub):not(.hero-actions):not(.hero-stats)');
+
+      revealEls.forEach(el => {
+        // Skip hero elements (handled by heroTl)
+        if (el.closest('.hero')) return;
+
+        gsap.to(el, {
+          scrollTrigger: {
+            trigger: el,
+            start: 'top 88%',
+            toggleActions: 'play none none none',
+          },
+          opacity: 1,
+          y: 0,
+          duration: 0.9,
+          ease: 'power3.out',
+        });
+      });
+
+      // ── STEP CARDS STAGGER ──
+      gsap.to('.step-card', {
+        scrollTrigger: {
+          trigger: '.steps-grid',
+          start: 'top 80%',
+        },
+        opacity: 1,
+        y: 0,
+        duration: 0.8,
+        stagger: 0.15,
+        ease: 'power3.out',
+      });
+
+      // ── COST CARDS ──
+      gsap.to('.cost-card', {
+        scrollTrigger: {
+          trigger: '.value-grid',
+          start: 'top 80%',
+        },
+        opacity: 1,
+        y: 0,
+        duration: 0.9,
+        stagger: 0.2,
+        ease: 'power3.out',
+      });
+
+      // ── QUOTE CARDS STAGGER ──
+      gsap.to('.quote-card', {
+        scrollTrigger: {
+          trigger: '.quotes-grid',
+          start: 'top 80%',
+        },
+        opacity: 1,
+        y: 0,
+        duration: 0.8,
+        stagger: 0.12,
+        ease: 'power3.out',
+      });
+
+      // ── FEATURE CARDS STAGGER ──
+      gsap.to('.feature-card', {
+        scrollTrigger: {
+          trigger: '.features-grid',
+          start: 'top 80%',
+        },
+        opacity: 1,
+        y: 0,
+        duration: 0.8,
+        stagger: 0.12,
+        ease: 'power3.out',
+      });
+
+      // ── PARALLAX ON HERO GLOW ──
+      gsap.to('.hero-bg-glow', {
+        scrollTrigger: {
+          trigger: '.hero',
+          start: 'top top',
+          end: 'bottom top',
+          scrub: true,
+        },
+        y: -200,
+        scale: 0.6,
+        opacity: 0,
+      });
+
+      // ── MAGNETIC BUTTONS ──
+      document.querySelectorAll('.btn-primary, .nav-cta').forEach(btn => {
+        btn.addEventListener('mousemove', (e) => {
+          const rect = btn.getBoundingClientRect();
+          const x = e.clientX - rect.left - rect.width / 2;
+          const y = e.clientY - rect.top - rect.height / 2;
+          gsap.to(btn, {
+            x: x * 0.15,
+            y: y * 0.15,
+            duration: 0.3,
+            ease: 'power2.out',
+          });
+        });
+
+        btn.addEventListener('mouseleave', () => {
+          gsap.to(btn, { x: 0, y: 0, duration: 0.5, ease: 'elastic.out(1, 0.5)' });
+        });
+      });
+
+      // ── NAV SCROLL EFFECT ──
+      ScrollTrigger.create({
+        start: 'top -80',
+        onUpdate: (self) => {
+          if (self.direction === 1) {
+            gsap.to('nav', { y: -100, duration: 0.3, ease: 'power2.in' });
+          } else {
+            gsap.to('nav', { y: 0, duration: 0.3, ease: 'power2.out' });
+          }
+        },
+      });
+
+      // ── SMOOTH SCROLL ANCHORS ──
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', (e) => {
+          e.preventDefault();
+          const target = document.querySelector(anchor.getAttribute('href'));
+          if (target) lenis.scrollTo(target, { offset: -80 });
+        });
+      });
+    });
+  </script>
+</body>
+</html>
