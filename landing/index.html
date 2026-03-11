@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vector Drop — Free Image to SVG Converter</title>
   <meta name="description" content="Drop any image, get a clean SVG. No subscriptions. No watermarks. Free forever.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%2300d4ff'/%3E%3C/svg%3E">
 
   <!-- Fonts -->
   <style>
@@ -963,7 +964,7 @@
       <div class="step-card reveal-up">
         <div class="step-number">02</div>
         <div class="step-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
         </div>
         <h3>Trace</h3>
         <p>Vector Drop upscales your image 3x and runs an optimized potrace pipeline for crisp, detailed SVG paths.</p>
@@ -989,7 +990,7 @@
       <div class="value-grid">
         <div class="cost-card them reveal-up">
           <div class="cost-card-label">The alternatives</div>
-          <div class="price">$55/mo</div>
+          <div class="price">$23/mo</div>
           <div class="price-sub">Adobe Illustrator — or $300+ for one-time vector tools</div>
           <ul class="cost-list">
             <li><span class="icon-x">&times;</span>Monthly subscription required</li>
@@ -1025,7 +1026,7 @@
       <div class="quotes-grid">
         <div class="quote-card reveal-up">
           <div class="quote-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-          <p class="quote-text">"I was paying <span class="highlight">$55/month for Illustrator</span> literally just to use Image Trace on client logos. That's $660 a year for one feature. Vector Drop does the same thing for free and the output is honestly cleaner."</p>
+          <p class="quote-text">"I was paying <span class="highlight">$23/month for Illustrator</span> literally just to use Image Trace on client logos. That's $276 a year for one feature. Vector Drop does the same thing for free and the output is honestly cleaner."</p>
           <div class="quote-author">
             <div class="quote-avatar">MR</div>
             <div class="quote-author-info">
@@ -1324,13 +1325,23 @@
       });
 
       // ── NAV SCROLL EFFECT ──
+      let navHidden = false;
+      let lastScrollY = 0;
+
       ScrollTrigger.create({
-        start: 'top -80',
+        start: 'top top',
+        end: 'max',
         onUpdate: (self) => {
-          if (self.direction === 1) {
-            gsap.to('nav', { y: -100, duration: 0.3, ease: 'power2.in' });
-          } else {
-            gsap.to('nav', { y: 0, duration: 0.3, ease: 'power2.out' });
+          const currentY = self.scroll();
+          const scrollingDown = currentY > lastScrollY && currentY > 80;
+          lastScrollY = currentY;
+
+          if (scrollingDown && !navHidden) {
+            navHidden = true;
+            gsap.to('nav', { y: -100, duration: 0.3, ease: 'power2.in', overwrite: true });
+          } else if (!scrollingDown && navHidden) {
+            navHidden = false;
+            gsap.to('nav', { y: 0, duration: 0.3, ease: 'power2.out', overwrite: true });
           }
         },
       });
