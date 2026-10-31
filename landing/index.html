@@ -4,20 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vector Drop — image to SVG, on your Mac</title>
-  <meta name="description" content="Drop a raster image on Vector Drop. It traces an SVG on your machine and copies it to the clipboard. Free, offline, no account.">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f3efe6'/%3E%3Cpath d='M6 22 C10 8 14 8 16 16 C18 24 22 24 26 10' fill='none' stroke='%23b5431a' stroke-width='2.4'/%3E%3C/svg%3E">
+  <meta name="description" content="Drop a raster image on Vector Drop. It traces an SVG on your Mac and copies it to the clipboard. Free, offline, no account.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23fafafa'/%3E%3Cpath d='M7 22c4-12 8-12 10-6s6 4 8-8' fill='none' stroke='%23171717' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,560;1,9..144,520&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --paper: #f3efe6;
-      --sheet: #f7f4ee;
-      --ink: #1c1915;
-      --ink-soft: #4a453c;
-      --rule: #d4cdc0;
-      --pen: #9a3412;
-      --pen-deep: #7c2d12;
+      --base-100: #fafafa;
+      --base-200: #f5f5f5;
+      --base-300: #e5e5e5;
+      --base-400: #737373;
+      --base-500: #525252;
+      --base-600: #262626;
+      --base-700: #171717;
+      --white: #ffffff;
+      --sans: Geist, ui-sans-serif, system-ui, sans-serif;
+      --mono: "Geist Mono", ui-monospace, monospace;
     }
 
     * { box-sizing: border-box; }
@@ -26,366 +29,560 @@
 
     body {
       margin: 0;
-      background:
-        radial-gradient(circle at 1px 1px, rgba(28, 25, 21, 0.06) 1px, transparent 0) 0 0 / 22px 22px,
-        var(--paper);
-      color: var(--ink);
-      font-family: Newsreader, "Iowan Old Style", Palatino, Georgia, serif;
-      font-size: 1.125rem;
-      line-height: 1.5;
-      font-optical-sizing: auto;
+      background: var(--white);
+      color: var(--base-600);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      -webkit-font-smoothing: antialiased;
     }
 
     ::selection {
-      background: #f0c7b4;
-      color: var(--ink);
+      background: var(--base-200);
+      color: var(--base-700);
     }
 
-    a { color: inherit; }
+    a { color: inherit; text-decoration: none; }
 
     :focus-visible {
-      outline: 2px solid var(--pen);
-      outline-offset: 4px;
+      outline: 2px solid var(--base-700);
+      outline-offset: 2px;
     }
 
     .skip {
       position: absolute;
       left: 16px;
       top: 8px;
-      transform: translateY(-140%);
-      background: var(--ink);
-      color: var(--paper);
-      padding: 8px 12px;
-      z-index: 2;
+      transform: translateY(-160%);
+      background: var(--base-700);
+      color: var(--base-100);
+      padding: 8px 16px;
+      border-radius: 6px;
+      z-index: 20;
     }
 
     .skip:focus { transform: none; }
 
-    .sheet {
-      width: min(1040px, calc(100% - 32px));
-      margin: 24px auto 48px;
-      background: var(--sheet);
-      border: 1px solid var(--rule);
-      position: relative;
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--white);
+      border-bottom: 1px solid var(--base-300);
     }
 
-    .sheet::before,
-    .sheet::after {
-      content: "";
-      position: absolute;
-      width: 14px;
-      height: 14px;
-      border-color: var(--pen);
-      border-style: solid;
-      pointer-events: none;
+    .header-inner,
+    .frame {
+      width: min(1280px, 100%);
+      margin: 0 auto;
     }
 
-    .sheet::before {
-      top: 10px;
-      left: 10px;
-      border-width: 1px 0 0 1px;
-    }
-
-    .sheet::after {
-      right: 10px;
-      bottom: 10px;
-      border-width: 0 1px 1px 0;
-    }
-
-    header {
+    .header-inner {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 24px;
-      padding: 28px 40px 0;
+      min-height: 64px;
+      padding: 0 20px;
     }
 
-    .mark {
-      font-family: Fraunces, Newsreader, Georgia, serif;
-      font-weight: 560;
-      font-size: 1.25rem;
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+      font-size: 15px;
+      color: var(--base-700);
       letter-spacing: -0.03em;
-      text-decoration: none;
     }
 
-    .mark i {
-      font-style: italic;
-      font-weight: 520;
-      color: var(--pen);
+    .logo-mark {
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      border-radius: 6px;
+      background: var(--base-200);
+      box-shadow: inset 0 0 0 1px var(--base-300);
     }
 
     nav {
       display: flex;
       align-items: center;
-      gap: 28px;
+      gap: 8px;
     }
 
-    nav a {
-      text-decoration: none;
-      font-size: 1rem;
+    .nav-link {
+      padding: 8px 12px;
+      border-radius: 6px;
+      color: var(--base-500);
+      font-size: 14px;
     }
 
-    nav a:hover { color: var(--pen); }
+    .nav-link:hover {
+      background: var(--base-200);
+      color: var(--base-700);
+    }
 
-    .download {
+    .btn {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
-      background: var(--ink);
-      color: var(--paper);
-      text-decoration: none;
-      padding: 12px 20px;
-      border-radius: 0;
-      font-size: 1rem;
-      line-height: 1;
+      height: 36px;
+      padding: 0 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
     }
 
-    .download:hover { background: var(--pen-deep); }
+    .btn-primary {
+      background: var(--base-700);
+      color: var(--white);
+    }
 
-    main { padding: 64px 40px 48px; }
+    .btn-primary:hover { background: var(--base-600); }
+
+    .btn-ghost {
+      background: var(--white);
+      color: var(--base-700);
+      box-shadow: inset 0 0 0 1px var(--base-300);
+    }
+
+    .btn-ghost:hover { background: var(--base-200); }
+
+    .frame {
+      border-left: 1px solid var(--base-300);
+      border-right: 1px solid var(--base-300);
+      min-height: calc(100vh - 64px);
+    }
 
     .hero {
-      display: grid;
-      grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
-      gap: 64px;
-      align-items: end;
+      padding: 80px 20px 48px;
+      text-align: center;
     }
 
     h1 {
-      margin: 0;
-      font-family: Fraunces, Newsreader, Georgia, serif;
-      font-weight: 560;
-      font-size: clamp(3.25rem, 7vw, 5.75rem);
-      line-height: 0.92;
-      letter-spacing: -0.04em;
-      font-optical-sizing: auto;
-    }
-
-    h1 em {
-      font-style: italic;
-      font-weight: 520;
-      color: var(--pen);
+      margin: 0 auto 20px;
+      max-width: 820px;
+      font-size: 72px;
+      font-weight: 500;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      color: var(--base-600);
     }
 
     .lede {
-      max-width: 38ch;
-      margin: 28px 0 0;
-      color: var(--ink-soft);
+      margin: 0 auto 24px;
+      max-width: 560px;
+      font-size: 18px;
+      font-weight: 400;
+      line-height: 1.35;
+      color: var(--base-400);
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 32px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      height: 32px;
+      padding: 0 12px 0 4px;
+      border-radius: 12px;
+      background: var(--white);
+      color: var(--base-700);
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: inset 0 0 0 1px var(--base-300);
+    }
+
+    .chip-icon {
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: var(--base-200);
+      box-shadow: inset 0 0 0 1px var(--base-300);
     }
 
     .actions {
       display: flex;
+      justify-content: center;
       flex-wrap: wrap;
-      align-items: baseline;
-      gap: 16px 24px;
-      margin-top: 32px;
+      gap: 8px;
     }
 
-    .fine {
-      margin: 0;
-      color: var(--ink-soft);
-      font-size: 0.95rem;
+    .panel-wrap {
+      padding: 0 20px 64px;
     }
 
-    figure {
-      margin: 0;
+    .panel {
+      overflow: hidden;
+      border-radius: 12px;
+      background: var(--white);
+      box-shadow: inset 0 0 0 1px rgba(23, 23, 23, 0.1), 0 1px 2px rgba(0, 0, 0, 0.04);
     }
 
-    .trace {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      gap: 12px;
+    .panel-bar {
+      display: flex;
       align-items: center;
+      justify-content: space-between;
+      min-height: 40px;
+      padding: 0 12px;
+      border-bottom: 1px solid rgba(23, 23, 23, 0.08);
+    }
+
+    .dots { display: flex; gap: 8px; }
+
+    .dots span {
+      width: 8px;
+      height: 8px;
+      border-radius: 4px;
+      background: var(--base-300);
+    }
+
+    .panel-label {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--base-400);
+    }
+
+    .stage {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      min-height: 380px;
+    }
+
+    .canvas {
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(var(--base-300) 1px, transparent 1px),
+        linear-gradient(90deg, var(--base-300) 1px, transparent 1px);
+      background-size: 24px 24px;
+      background-color: var(--base-100);
+      border-right: 1px solid var(--base-300);
+      padding: 32px;
+    }
+
+    .canvas svg { width: min(280px, 70%); height: auto; }
+
+    .side {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
       padding: 20px;
-      border: 1px solid var(--rule);
-      background: var(--paper);
+      background: var(--white);
     }
 
-    .trace svg { width: 100%; height: auto; display: block; }
-
-    .arrow {
-      color: var(--pen);
-      font-family: Fraunces, Georgia, serif;
-      font-style: italic;
-      font-size: 1.75rem;
-      line-height: 1;
+    .side h2 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--base-700);
     }
 
-    figcaption {
+    .side p {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.4;
+      color: var(--base-500);
+    }
+
+    .path-box {
+      margin-top: auto;
+      padding: 16px;
+      border-radius: 8px;
+      background: var(--base-100);
+      box-shadow: inset 0 0 0 1px var(--base-300);
+    }
+
+    .path-box svg { width: 100%; height: auto; display: block; }
+
+    .path {
+      stroke-dasharray: 220;
+      stroke-dashoffset: 220;
+      animation: draw 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes draw { to { stroke-dashoffset: 0; } }
+
+    .side-meta {
       display: flex;
       justify-content: space-between;
       margin-top: 8px;
-      font-size: 0.85rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--ink-soft);
-    }
-
-    .path {
-      stroke-dasharray: 180;
-      stroke-dashoffset: 180;
-      animation: draw 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
-    }
-
-    @keyframes draw {
-      to { stroke-dashoffset: 0; }
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--base-400);
     }
 
     .steps {
-      margin-top: 80px;
-      padding-top: 32px;
-      border-top: 1px solid var(--rule);
       display: grid;
-      grid-template-columns: 0.8fr 1fr 1fr 1fr;
-      gap: 32px;
+      grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid var(--base-300);
     }
 
-    h2 {
+    .step {
+      padding: 40px 32px 48px;
+    }
+
+    .step + .step { border-left: 1px solid var(--base-300); }
+
+    .step-kicker {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--base-400);
+    }
+
+    .step h3 {
+      margin: 12px 0 8px;
+      font-size: 32px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      color: var(--base-600);
+    }
+
+    .step p {
       margin: 0;
-      font-family: Fraunces, Georgia, serif;
-      font-weight: 560;
-      font-size: 1.75rem;
-      letter-spacing: -0.03em;
-      line-height: 1.1;
-    }
-
-    ol {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: contents;
-    }
-
-    li h3 {
-      margin: 0 0 8px;
-      font-family: Fraunces, Georgia, serif;
-      font-size: 1.35rem;
-      font-weight: 560;
-      letter-spacing: -0.03em;
-    }
-
-    li p {
-      margin: 0;
-      color: var(--ink-soft);
       max-width: 32ch;
+      font-size: 16px;
+      line-height: 1.4;
+      color: var(--base-500);
     }
 
-    .note {
-      margin: 48px 0 0;
-      max-width: 62ch;
+    .facts {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      border-top: 1px solid var(--base-300);
+    }
+
+    .facts-title {
+      padding: 40px 32px;
+      border-right: 1px solid var(--base-300);
+    }
+
+    .facts-title h2 {
+      margin: 0;
+      font-size: 32px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    .fact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .fact {
+      padding: 24px 32px;
+      border-bottom: 1px solid var(--base-300);
+    }
+
+    .fact:nth-child(odd) { border-right: 1px solid var(--base-300); }
+
+    .fact:nth-last-child(-n+2) { border-bottom: 0; }
+
+    .fact strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--base-700);
+    }
+
+    .fact span {
+      font-size: 14px;
+      line-height: 1.4;
+      color: var(--base-500);
+    }
+
+    .close {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 48px 32px;
+      border-top: 1px solid var(--base-300);
+    }
+
+    .close h2 {
+      margin: 0 0 8px;
+      font-size: 40px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    .close p {
+      margin: 0;
+      color: var(--base-500);
+      font-size: 16px;
     }
 
     footer {
       display: flex;
       justify-content: space-between;
       gap: 16px;
-      padding: 20px 40px 28px;
-      border-top: 1px solid var(--rule);
-      color: var(--ink-soft);
-      font-size: 0.95rem;
+      padding: 20px 32px 28px;
+      border-top: 1px solid var(--base-300);
+      color: var(--base-400);
+      font-size: 13px;
     }
 
-    footer a { color: var(--pen-deep); }
+    footer a { color: var(--base-600); }
+    footer a:hover { color: var(--base-700); }
 
-    @media (max-width: 800px) {
-      header, main, footer { padding-left: 20px; padding-right: 20px; }
-      header { padding-top: 20px; align-items: flex-start; }
-      .hero, .steps { grid-template-columns: 1fr; gap: 32px; }
-      .steps { margin-top: 56px; }
-      h1 { font-size: 3.25rem; }
-      footer { flex-direction: column; }
+    @media (max-width: 900px) {
+      h1 { font-size: 40px; }
+      .hero { padding-top: 48px; }
+      .stage, .facts, .steps, .close { grid-template-columns: 1fr; display: grid; }
+      .canvas { border-right: 0; border-bottom: 1px solid var(--base-300); min-height: 240px; }
+      .step + .step, .facts-title { border-left: 0; border-top: 1px solid var(--base-300); }
+      .facts-title { border-right: 0; }
+      .fact:nth-child(odd) { border-right: 0; }
+      .fact { border-bottom: 1px solid var(--base-300); }
+      .close { flex-direction: column; align-items: flex-start; }
+      .frame { border-left: 0; border-right: 0; }
     }
 
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
-      .path {
-        animation: none;
-        stroke-dashoffset: 0;
-      }
+      .path { animation: none; stroke-dashoffset: 0; }
     }
   </style>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
-  <div class="sheet">
-    <header>
-      <a class="mark" href="/">Vector <i>Drop</i></a>
+  <header class="header">
+    <div class="header-inner">
+      <a class="logo" href="/">
+        <span class="logo-mark" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 11c2.2-6 4.2-6.2 5.4-3.2C8.6 10.2 11 11 12 4" stroke="#171717" stroke-width="1.4"/>
+          </svg>
+        </span>
+        Vector Drop
+      </a>
       <nav aria-label="Primary">
-        <a href="#how">How it works</a>
-        <a class="download" href="/vector-drop.dmg" download>Download for Mac</a>
+        <a class="nav-link" href="#how">How it works</a>
+        <a class="btn btn-primary" href="/vector-drop.dmg" download>Download for Mac</a>
       </nav>
-    </header>
+    </div>
+  </header>
 
+  <div class="frame">
     <main id="main">
-      <div class="hero">
-        <div>
-          <h1>Drop an image.<br>Get a <em>vector.</em></h1>
-          <p class="lede">Drag a PNG, JPG, WebP, or AVIF onto the window. Vector Drop traces it on your Mac and copies an SVG to the clipboard.</p>
-          <div class="actions">
-            <a class="download" href="/vector-drop.dmg" download>Download for Mac</a>
-            <p class="fine">Apple Silicon. Under 5MB. The image never leaves the machine.</p>
-          </div>
+      <section class="hero">
+        <h1>Drop an image.<br>Get a vector.</h1>
+        <p class="lede">A Mac app that traces a raster into an SVG on your machine, then copies it to the clipboard.</p>
+        <div class="chips" aria-label="What it does">
+          <span class="chip"><span class="chip-icon" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v6M3.5 5.5 6 8l2.5-2.5" stroke="#171717" stroke-width="1.2"/></svg></span>Drop</span>
+          <span class="chip"><span class="chip-icon" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 8c2-5 4-5 5-2s3 1 3-3" stroke="#171717" stroke-width="1.2"/></svg></span>Trace</span>
+          <span class="chip"><span class="chip-icon" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="4" y="4" width="6" height="6" rx="1" stroke="#171717" stroke-width="1.2"/><path d="M8 4V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h1" stroke="#171717" stroke-width="1.2"/></svg></span>Copy</span>
         </div>
-
-        <figure>
-          <div class="trace">
-            <svg viewBox="0 0 120 120" role="img" aria-label="A coarse pixel cluster">
-              <rect width="120" height="120" fill="#f3efe6"/>
-              <g fill="#1c1915">
-                <rect x="28" y="36" width="12" height="12"/>
-                <rect x="40" y="24" width="12" height="12"/>
-                <rect x="52" y="24" width="12" height="12"/>
-                <rect x="64" y="36" width="12" height="12"/>
-                <rect x="76" y="48" width="12" height="12"/>
-                <rect x="76" y="60" width="12" height="12"/>
-                <rect x="64" y="72" width="12" height="12"/>
-                <rect x="52" y="80" width="12" height="12"/>
-                <rect x="40" y="72" width="12" height="12"/>
-                <rect x="28" y="60" width="12" height="12"/>
-                <rect x="28" y="48" width="12" height="12"/>
-                <rect x="44" y="44" width="12" height="12" fill="#9a3412"/>
-                <rect x="56" y="48" width="12" height="12"/>
-                <rect x="56" y="60" width="12" height="12"/>
-              </g>
-            </svg>
-            <div class="arrow" aria-hidden="true">→</div>
-            <svg viewBox="0 0 120 120" role="img" aria-label="The same mark as a single smooth path">
-              <rect width="120" height="120" fill="#f3efe6"/>
-              <path class="path" d="M34 48 C34 28 52 22 64 30 C78 20 96 36 90 54 C104 66 92 90 70 86 C58 100 36 90 34 72 C18 66 20 50 34 48 Z" fill="none" stroke="#9a3412" stroke-width="2.25"/>
-              <circle cx="62" cy="56" r="3" fill="#1c1915"/>
-            </svg>
-          </div>
-          <figcaption>
-            <span>Raster</span>
-            <span>SVG</span>
-          </figcaption>
-        </figure>
-      </div>
-
-      <section class="steps" id="how">
-        <h2>Three moves. Then paste.</h2>
-        <ol>
-          <li>
-            <h3>Drop</h3>
-            <p>Put the image on the window. No account, no upload, no file-format menu.</p>
-          </li>
-          <li>
-            <h3>Trace</h3>
-            <p>It upscales with Lanczos3, then runs potrace so the curves stay tight on logos and type.</p>
-          </li>
-          <li>
-            <h3>Copy</h3>
-            <p>The SVG lands on the clipboard. Paste it into Figma, Sketch, or a file.</p>
-          </li>
-        </ol>
+        <div class="actions">
+          <a class="btn btn-primary" href="/vector-drop.dmg" download>Download for Mac</a>
+          <a class="btn btn-ghost" href="#how">See the steps</a>
+        </div>
       </section>
 
-      <p class="note">Free. No watermark, no credit meter, no subscription. Illustrator’s Image Trace is a monthly bill. This is a small Mac app that stays offline.</p>
+      <div class="panel-wrap">
+        <div class="panel">
+          <div class="panel-bar">
+            <div class="dots" aria-hidden="true"><span></span><span></span><span></span></div>
+            <div class="panel-label">trace</div>
+          </div>
+          <div class="stage">
+            <div class="canvas">
+              <svg viewBox="0 0 160 160" role="img" aria-label="A coarse pixel cluster, the image before tracing">
+                <g fill="#171717">
+                  <rect x="36" y="48" width="16" height="16"/>
+                  <rect x="52" y="32" width="16" height="16"/>
+                  <rect x="68" y="32" width="16" height="16"/>
+                  <rect x="84" y="48" width="16" height="16"/>
+                  <rect x="100" y="64" width="16" height="16"/>
+                  <rect x="100" y="80" width="16" height="16"/>
+                  <rect x="84" y="96" width="16" height="16"/>
+                  <rect x="68" y="108" width="16" height="16"/>
+                  <rect x="52" y="96" width="16" height="16"/>
+                  <rect x="36" y="80" width="16" height="16"/>
+                  <rect x="36" y="64" width="16" height="16"/>
+                  <rect x="60" y="60" width="16" height="16"/>
+                  <rect x="76" y="68" width="16" height="16"/>
+                  <rect x="76" y="84" width="16" height="16"/>
+                </g>
+              </svg>
+            </div>
+            <aside class="side">
+              <h2>Same mark, one path</h2>
+              <p>PNG, JPG, WebP, or AVIF in. A single SVG path out. Nothing is uploaded.</p>
+              <div class="path-box">
+                <svg viewBox="0 0 160 100" role="img" aria-label="The same mark drawn as a smooth vector path">
+                  <path class="path" d="M24 58 C24 28 58 16 78 32 C100 14 140 36 128 58 C146 74 128 96 100 90 C84 108 48 98 40 78 C18 74 12 64 24 58 Z" fill="none" stroke="#171717" stroke-width="1.75"/>
+                </svg>
+                <div class="side-meta"><span>SVG</span><span>clipboard</span></div>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </div>
+
+      <section class="steps" id="how" aria-label="How it works">
+        <article class="step">
+          <div class="step-kicker">01</div>
+          <h3>Drop</h3>
+          <p>Put the image on the window. No account and no file-format menu.</p>
+        </article>
+        <article class="step">
+          <div class="step-kicker">02</div>
+          <h3>Trace</h3>
+          <p>Lanczos3 upscales it, then potrace draws the curves for logos and type.</p>
+        </article>
+        <article class="step">
+          <div class="step-kicker">03</div>
+          <h3>Copy</h3>
+          <p>The SVG goes to the clipboard. Paste it into Figma, Sketch, or a file.</p>
+        </article>
+      </section>
+
+      <section class="facts" aria-label="What you get">
+        <div class="facts-title">
+          <h2>On the machine. Not a tab.</h2>
+        </div>
+        <div class="fact-grid">
+          <div class="fact"><strong>Offline</strong><span>The image never leaves the Mac.</span></div>
+          <div class="fact"><strong>Potrace</strong><span>Tuned for tight curves and sharp corners.</span></div>
+          <div class="fact"><strong>Clipboard</strong><span>One click, then paste the markup.</span></div>
+          <div class="fact"><strong>Free</strong><span>No watermark, meter, or subscription.</span></div>
+        </div>
+      </section>
+
+      <section class="close">
+        <div>
+          <h2>Download Vector Drop</h2>
+          <p>Apple Silicon. Under 5MB. macOS.</p>
+        </div>
+        <a class="btn btn-primary" href="/vector-drop.dmg" download>Download for Mac</a>
+      </section>
     </main>
 
     <footer>
       <span>© 2026 Vector Drop</span>
-      <a href="https://github.com/derrrick/vector-drop">Source for this site</a>
+      <a href="https://github.com/derrrick/vector-drop">Site source</a>
     </footer>
   </div>
 </body>
